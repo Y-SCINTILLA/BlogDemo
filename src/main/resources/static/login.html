@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登录</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="font/iconfont.css">
+
+    <style>
+        .el-button:hover {
+            background: #66b1ff;
+        }
+        body {
+            background: url('img/1.jpg');
+            background-attachment:fixed;
+            background-size:100% 100%;
+        }
+        /*  body{*/
+        /*    background-color: rgb(232,234,242);*/
+        /*}*/
+        #main{
+            position: absolute;
+            top:50%;
+            left: 50%;
+            transform: translate(-50%,-50%);
+            background-color: white;
+            width: 500px;
+            box-shadow:0 2px 4px rgba(0,0,0,3),
+            0 3px 6px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+          #main::before {
+              content: '';
+              position: absolute;
+              top: -20px;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              background-color: #409EFF;
+              box-shadow: 0 0 6px rgba(0,0,0,0.3);
+          }
+        .el-header{
+            margin-bottom: 20px;
+            margin-top: 20px;
+            font-size: 20px;
+        }
+        .el-button{
+           margin-right: 50px;
+        }
+        .el-footer{
+            height:30px!important;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="app">
+    <canvas id="bgCanvas"></canvas>
+    <div id="main">
+        <el-container>
+            <el-header>博客</el-header>
+            <el-main>
+                <el-form :model="user" rules="rules" ref="user" label-width="50px">
+                    <el-form-item label="账号" prop="username">
+                        <el-input type="username" v-model="user.username" placeholder="账号"></el-input>
+                    </el-form-item>
+                    <el-form-item label="密码" prop="password">
+                        <el-input type="password" v-model="user.password" placeholder="密码"></el-input>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-button type="primary" @click="login('user')">登录</el-button>
+                    </el-form-item>
+                </el-form>
+            </el-main>
+            <el-footer>
+                <a href="register.html" style="margin-right: 10px">注册</a>|<a style="margin-left: 10px">忘记密码</a>
+            </el-footer>
+        </el-container>
+
+    </div>
+</div>
+
+    <script>
+        const vue= new Vue({
+            el:"#app",
+            data(){
+                return{
+                    user:{
+                        username:'',
+                        password:'',
+                    },
+                    rules:{
+                        username:[
+                            {required:true,message:"请输入用户名",trigger:"blur",type:"string"},
+                            {max:10,message:"用户名过长"}
+                        ],
+                        password:[
+                            {required:true,message:"密码不符合要求,应为6-12位",trigger:"blur",min:6,max:12}
+                        ]
+                    }
+                }
+            },
+            methods:{
+                login(user){
+                    this.$refs[user].validate((valid)=>{
+                        if(valid){
+                            axios.post("/user/login",this.user).then(res=>{
+                                if(res.data.code==200){
+                                    window.location.href='index.html'
+                                }else{
+                                    this.$message.error(res.data.message)
+                                }
+                            })
+                        }else{
+                            console.log("error message")
+                            return false;
+                        }
+                    })
+                }
+            },
+        })
+    </script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>文章内容</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="font/iconfont.css">
+    <style>
+        /* 修改评论输入框样式 */
+        button {
+            padding: 8px 16px;
+            border-radius: 4px;
+            background-color: #409EFF;
+            color: white;
+            border: none;
+        }
+
+        .el-form textarea {
+            width: 100%;
+            min-height: 120px;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        body {
+            background-color: #dcdcdc;
+        }
+        /* 修改按钮样式 */
+        .el-form .el-form-item {
+            text-align: right;
+        }
+
+        .el-form .el-form-item .el-button {
+            padding: 8px 16px;
+        }
+        .el-col{
+            margin-top: 40px;
+        }
+        #edit{
+            height: 40px;
+            background-color:rgb(64,158,255);
+            display: flex;
+            align-content: center;
+            justify-content: center;
+            font-size: 15px;
+            width: 100px;
+            border-radius: 5px;
+            color: white;
+        }
+        .article-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            word-wrap: break-word;
+        }
+
+        .article-content {
+            font-size: 16px;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <el-container>
+        <el-header>
+            <el-row>
+                <el-col :span="6">
+                    <el-breadcrumb separator="/">
+                        <el-breadcrumb-item><a href="index.html">首页</a></el-breadcrumb-item>
+                        <el-breadcrumb-item><a href="MyInfo.html">个人中心</a></el-breadcrumb-item>
+                    </el-breadcrumb>
+                </el-col>
+                <el-col :span="8">
+                    <el-input v-model="queryString" placeholder="请输入要查找文章的标题或作者"></el-input>
+                </el-col>
+                <el-col :span="2">
+                    <el-button type="primary" icon="el-icon-search" @click="select()">搜索</el-button>
+                </el-col>
+                <el-col :span="2">
+                    <div id="edit">
+                        <i class="el-icon-document-add" style="margin-top: 10px"></i>
+                        <a type="primary" href="edit.html" style="color: white;margin-top: 7px">发布</a>
+                    </div>
+                </el-col>
+                <el-col :span="6">
+                    <img src="img/2.jpg" style="float: right;width: 400px ">
+                </el-col>
+            </el-row>
+        </el-header>
+    </el-container>
+    <el-main style="margin-top: 100px">
+        <div style="margin-left: 350px;margin-right: 350px; margin-bottom: 20px;">
+            <div id="blog" class="article-content">
+                <div class="article-title">{{ article.title }}</div>
+                <div style="background-color: rgb(248,248,248);height: 20px">
+                    <i class="iconfont icon-bianji"></i>
+                    于{{article.publishedTime}}发布
+                    <i class="iconfont icon-yonghu"></i>
+                    点赞数{{article.likes}}
+                    <i class="iconfont icon-shuju"></i>
+                    收藏数{{article.favorites}}
+                </div>
+                <div class="article-content" style="background-color: #dcdcdc">{{ article.content }}</div>
+            </div>
+            <div class="actions" style="float: right">
+                <!-- 点赞按钮 -->
+                <button type="primary" @click="likeArticle()">点赞</button>
+                <span>点赞数：{{ article.likes }}</span>
+
+                <!-- 收藏按钮 -->
+                <button @click="favoriteArticle">收藏</button>
+                <span>收藏数：{{ article.favorites }}</span>
+            </div>
+
+            <el-form :model="comment">
+                <textarea
+                        v-model="comment.content"
+                        placeholder="请输入评论内容">
+                </textarea>
+                <el-form-item>
+                    <el-button type="primary" @click="submitComment">提交评论</el-button>
+                </el-form-item>
+            </el-form>
+            <div v-for="comment in comments " :key="comment.commentId" @click="showInfo(commentId)" style="height:90px;overflow: hidden; word-wrap: break-word;">
+                <div style="background-color: rgb(248,248,248);height: 20px">
+                    <i class="iconfont icon-bianji"></i>
+                    Id{{comment.commentId}}
+                    <i class="iconfont icon-yonghu"></i>
+                    点赞数{{comment.likes}}
+                    <i class="iconfont icon-shuju"></i>
+                    于{{comment.commentTime}}评论
+                    <i class="iconfont icon-shangchuan"></i>
+                    {{comment.content}}
+                </div>
+            </div>
+        </div>
+    </el-main>
+</div>
+<script>
+    var app = new Vue({
+        el: '#app',
+        data: {
+            article: {
+                title: '',
+                content: '',
+                likes:'',
+                favorites:'',
+            },
+            comment: {
+                content:'',
+                likes:'',
+                commentTime:'',
+                uid:'',
+                articleId:'',
+                commentId:'',
+            },
+            comments:[],
+            selectedComment:null,
+        },
+        mounted() {
+            this.loadArticleContent();
+            this.loadCommentContent();
+        },
+        methods: {
+
+            submitComment(){
+                axios.post("/comment/add",this.comment).then(res=>{
+                    if(res.data.code==200){
+                        location.reload(); // 页面重新加载
+                    }else{
+                        this.$message.error(res.data.message);
+                    }
+                })
+            },
+            likeArticle() {
+                function getParameterByName(name) {
+                    name = name.replace(/[\[\]]/g, "\\$&");
+                    var url = window.location.href;
+                    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                        results = regex.exec(url);
+                    if (!results) return null;
+                    if (!results[2]) return '';
+                    return decodeURIComponent(results[2].replace(/\+/g, " "));
+                }
+
+                // 获取文章 ID
+                var articleId = getParameterByName('articleId');
+                axios.post("/article/likes", { article_id: articleId })
+                    .then(response => {
+                        if (response.data.code === 200) {
+                            this.article.likes+=1;
+                            location.reload(); // 页面重新加载
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            },
+            favoriteArticle(){
+                function getParameterByName(name) {
+                    name = name.replace(/[\[\]]/g, "\\$&");
+                    var url = window.location.href;
+                    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                        results = regex.exec(url);
+                    if (!results) return null;
+                    if (!results[2]) return '';
+                    return decodeURIComponent(results[2].replace(/\+/g, " "));
+                }
+                var articleId=getParameterByName('articleId')
+
+                axios.post('/article/favorites', {
+                    article_id: articleId
+                })
+                    .then(response => {
+                        if(response.data.code === 200) {
+                            this.article.favorites += 1;
+                            location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error)
+                    })
+            },
+            loadArticleContent() {
+                // 解析 URL 参数
+                function getParameterByName(name) {
+                    name = name.replace(/[\[\]]/g, "\\$&");
+                    var url = window.location.href;
+                    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                        results = regex.exec(url);
+                    if (!results) return null;
+                    if (!results[2]) return '';
+                    return decodeURIComponent(results[2].replace(/\+/g, " "));
+                }
+
+                // 获取文章 ID
+                var articleId = getParameterByName('articleId');
+                // 发起请求获取文章内容
+                axios.get('/article/selectByArticleId', {
+                    params: {
+                        articleId: articleId
+                    }
+                })
+                    .then(response => {
+                        // 请求成功，将文章内容赋值给 this.article
+                        this.article = response.data.data;
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            },
+            created(){
+                this.show();
+            },
+            loadCommentContent() {
+                // 解析 URL 参数
+                function getParameterByName(name) {
+                    name = name.replace(/[\[\]]/g, "\\$&");
+                    var url = window.location.href;
+                    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                        results = regex.exec(url);
+                    if (!results) return null;
+                    if (!results[2]) return '';
+                    return decodeURIComponent(results[2].replace(/\+/g, " "));
+                }
+
+                // 获取文章 ID
+                var commentId = getParameterByName('commentId');
+                // 发起请求获取文章内容
+                axios.get('/comment/selectAll')
+                    .then(response => {
+                        this.comments = response.data.data;
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+                if(commentId) {
+                    this.selectedComment = this.comments.find(comment => {
+                        return comment.id === commentId;
+                    })
+                }
+            },
+            showInfo(commentId) {
+                window.location.href = `article.html?commentId=${commentId}`
+            }
+        }
+    });
+</script>
+</body>
+</html>

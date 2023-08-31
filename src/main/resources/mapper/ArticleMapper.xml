@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.mapper.ArticleMapper">
+    <resultMap id="ArticleMap" type="com.example.pojo.Article">
+        <result property="articleId" column="article_id"></result>
+        <result property="publishedTime" column="published_time"></result>
+    </resultMap>
+    <insert id="add">
+        insert into article(uid,title,content,published_time)
+        values(#{uid},#{title},#{content},#{publishedTime})
+    </insert>
+    <!-- 在合适的位置，例如mapper标签内 -->
+    <update id="likes">
+         UPDATE article
+         SET likes =if(likes!=0,likes+1,1)
+    </update>
+    <update id="favorites">
+        update article
+        set favorites=if(favorites!=0,favorites+1,1)
+    </update>
+
+    <select id="selectAll" resultMap="ArticleMap">
+        select * from article
+    </select>
+    <select id="selectByArticleId" resultMap="ArticleMap">
+        select * from article where article_id=#{articleId}
+    </select>
+</mapper>

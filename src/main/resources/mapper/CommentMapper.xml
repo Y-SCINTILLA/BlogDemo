@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.example.mapper.CommentMapper">
+    <resultMap id="CommentMap" type="com.example.pojo.Comment">
+        <result property="commentId" column="comment_id"></result>
+        <result property="commentTime" column="comment_time"></result>
+    </resultMap>
+    <insert id="add">
+        insert into comment(uid,comment_time,content)
+        values(#{uid},#{commentTime},#{content})
+    </insert>
+    <select id="selectByCommentId" resultType="com.example.pojo.Comment">
+        select * from comment where comment_id=#{commentId}
+    </select>
+    <select id="selectAll" resultType="com.example.pojo.Comment">
+        select * from comment
+    </select>
+</mapper>
